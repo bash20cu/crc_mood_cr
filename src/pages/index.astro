@@ -1,0 +1,447 @@
+---
+import CanvasHero from "@components/CanvasHero.astro";
+import BaseLayout from "@layouts/BaseLayout.astro";
+import {
+  formatSparklineValues,
+  getRateChange,
+  getTrend,
+  mockExchangeRate,
+} from "@lib/exchange-rate";
+import { getMoodContent } from "@lib/mood";
+
+const trend = getTrend(mockExchangeRate.currentRate, mockExchangeRate.previousRate);
+const rateChange = getRateChange(mockExchangeRate.currentRate, mockExchangeRate.previousRate);
+const mood = getMoodContent(trend);
+const initialSparkline = formatSparklineValues(
+  mockExchangeRate.sparkline,
+  mockExchangeRate.currentRate,
+);
+
+const formatCurrency = new Intl.NumberFormat("es-CR", {
+  style: "currency",
+  currency: "CRC",
+  maximumFractionDigits: 2,
+});
+
+const formatDate = new Intl.DateTimeFormat("es-CR", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+const trendLabelMap = {
+  up: "Subiendo sabroso",
+  down: "Bajando rico",
+  stable: "Ni fu ni fa",
+} as const;
+
+const sourceFallbackLabel = "Mock local";
+
+const demoButtonBaseClass =
+  "button-pop rounded-full px-4 py-2 text-sm font-black tracking-[0.08em] shadow-sm";
+---
+
+<BaseLayout
+  title="DolarMood CR"
+  description="Un dashboard tico, vacilon y frontend-only para ver el tipo de cambio con humor."
+>
+  <main class="mx-auto flex min-h-screen w-full max-w-7xl flex-col justify-center px-4 py-4 md:px-6 md:py-5">
+    <section class="mb-4 grid gap-4 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+      <div class="space-y-3 pt-1">
+        <p class="inline-flex rounded-full border border-white/70 bg-white/75 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-slate-600 shadow-sm">
+          Parodia fintech a la tica
+        </p>
+
+        <div class="max-w-2xl space-y-3">
+          <h1 class="text-4xl font-black tracking-tight text-slate-900 md:text-6xl">
+            DolarMood CR
+          </h1>
+          <p class="max-w-xl text-base leading-7 text-slate-700 md:text-lg">
+            Un dashboard vacilon donde el tipo de cambio se pone demasiado intenso por absolutamente todo.
+          </p>
+        </div>
+
+        <div class="grid gap-3 sm:grid-cols-2">
+          <article class="glass-card enter-rise rounded-[1.75rem] p-4 md:p-5">
+            <p class="mb-2 text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+              Tipo de cambio
+            </p>
+            <p class="text-5xl font-black tracking-[-0.04em] text-slate-900 md:text-6xl" data-rate-value>
+              {formatCurrency.format(mockExchangeRate.currentRate)}
+            </p>
+            <p class="mt-2 text-sm font-semibold text-slate-700 md:text-base" data-fetch-status>
+              Dato mockeado por ahora, pero ya viene con su buena trama visual.
+            </p>
+          </article>
+
+          <article class="glass-card floaty enter-rise rounded-[1.75rem] p-4 [animation-delay:120ms] md:p-5">
+            <p class="mb-2 text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
+              El mood
+            </p>
+            <p class="mood-fade text-2xl font-black tracking-tight text-slate-900" data-mood-headline>{mood.headline}</p>
+            <p class="mood-fade mt-2 text-sm leading-6 text-slate-600" data-mood-body>{mood.body}</p>
+          </article>
+        </div>
+      </div>
+
+      <CanvasHero trend={trend} mascotLabel={mood.mascotLabel} />
+    </section>
+
+    <section class="grid gap-3 md:grid-cols-3">
+      <article class="glass-card enter-rise rounded-[1.5rem] p-4 [animation-delay:180ms] md:p-5">
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Como va la vara</p>
+        <p
+          class="trend-badge mt-3 inline-flex rounded-full px-4 py-2 text-xl font-black uppercase tracking-[0.12em] md:px-5 md:py-3 md:text-2xl"
+          data-trend-label
+          data-trend={trend}
+        >
+          {trendLabelMap[trend]}
+        </p>
+        <p class="mt-2 text-sm text-slate-600">
+          Cambio: <span class="font-bold text-slate-900" data-rate-change>{rateChange > 0 ? "+" : ""}{rateChange}</span>
+        </p>
+      </article>
+
+      <article class="glass-card enter-rise rounded-[1.5rem] p-4 [animation-delay:240ms] md:p-5">
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Sello oficial del drama</p>
+        <p class="mood-fade mt-3 text-3xl font-black text-slate-900" data-mood-badge>{mood.badge}</p>
+        <p class="mt-2 text-sm text-slate-600" data-source-line>
+          Fuente actual: {sourceFallbackLabel}. Apenas cargue el browser, intentamos jalar el dato real.
+        </p>
+      </article>
+
+      <article class="glass-card enter-rise rounded-[1.5rem] p-4 [animation-delay:300ms] md:p-5">
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Ultima actualizacion</p>
+        <p class="mt-3 text-2xl font-black text-slate-900" data-updated-at>
+          {formatDate.format(new Date(mockExchangeRate.updatedAt))}
+        </p>
+        <p class="mt-2 text-sm text-slate-600">La comparacion del trend se guarda solo en este navegador con `localStorage`.</p>
+      </article>
+    </section>
+
+    <section class="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+      <article class="glass-card enter-rise rounded-[1.5rem] p-4 [animation-delay:360ms] md:p-5">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Pulso del dolar</p>
+            <p class="mt-2 text-sm text-slate-600">
+              Mini sparkline con lecturas guardadas en el navegador para que la vara tenga memoria.
+            </p>
+          </div>
+          <p class="rounded-full bg-white/75 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
+            frontend-only
+          </p>
+        </div>
+
+        <svg
+          class="mt-3 h-20 w-full overflow-visible md:h-24"
+          viewBox="0 0 300 80"
+          preserveAspectRatio="none"
+          aria-label="Mini grafico del tipo de cambio"
+          data-sparkline
+          data-values={initialSparkline.join(",")}
+        >
+          <path
+            d=""
+            fill="none"
+            stroke="#ff7d62"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="4"
+            data-sparkline-path
+          ></path>
+        </svg>
+      </article>
+
+      <article class="glass-card enter-rise rounded-[1.5rem] p-4 text-sm leading-6 text-slate-600 [animation-delay:420ms] md:p-5">
+        <p class="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Atribucion</p>
+        <p class="mt-3">
+          Datos en vivo via
+          <a
+            class="font-bold text-slate-900 underline decoration-2 underline-offset-4"
+            href="https://www.exchangerate-api.com/docs/free"
+            target="_blank"
+            rel="noreferrer"
+            data-source-link
+          >
+            ExchangeRate-API
+          </a>.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-3">
+          <button
+            class={`${demoButtonBaseClass} bg-rose-500 text-white`}
+            type="button"
+            data-demo-trend="up"
+            data-demo-intensity="wild"
+          >
+            Simular crisis 😈
+          </button>
+          <button
+            class={`${demoButtonBaseClass} bg-emerald-500 text-white`}
+            type="button"
+            data-demo-trend="down"
+            data-demo-intensity="wild"
+          >
+            Simular bajon 😌
+          </button>
+          <button
+            class={`${demoButtonBaseClass} bg-indigo-500 text-white`}
+            type="button"
+            data-demo-trend="stable"
+            data-demo-intensity="mild"
+          >
+            Simular calma sospechosa 👀
+          </button>
+        </div>
+      </article>
+    </section>
+  </main>
+</BaseLayout>
+
+<script>
+  import { fetchLiveExchangeRate } from "@lib/live-exchange-rate";
+  import { getMoodContent } from "@lib/mood";
+
+  const currencyFormatter = new Intl.NumberFormat("es-CR", {
+    style: "currency",
+    currency: "CRC",
+    maximumFractionDigits: 2,
+  });
+
+  const dateFormatter = new Intl.DateTimeFormat("es-CR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const trendLabelMap = {
+    up: "Subiendo sabroso",
+    down: "Bajando rico",
+    stable: "Ni fu ni fa",
+  };
+
+  const rateValue = document.querySelector("[data-rate-value]");
+  const fetchStatus = document.querySelector("[data-fetch-status]");
+  const moodHeadline = document.querySelector("[data-mood-headline]");
+  const moodBody = document.querySelector("[data-mood-body]");
+  const trendLabel = document.querySelector("[data-trend-label]");
+  const rateChange = document.querySelector("[data-rate-change]");
+  const moodBadge = document.querySelector("[data-mood-badge]");
+  const updatedAt = document.querySelector("[data-updated-at]");
+  const sourceLine = document.querySelector("[data-source-line]");
+  const sourceLink = document.querySelector("[data-source-link]");
+  const sparkline = document.querySelector("[data-sparkline]");
+  const sparklinePath = document.querySelector("[data-sparkline-path]");
+  const moodNodes = [moodHeadline, moodBody, moodBadge].filter((node) => node instanceof HTMLElement);
+  const demoButtons = document.querySelectorAll("[data-demo-trend]");
+
+  updateSparkline(
+    sparkline instanceof SVGElement ? sparkline.dataset.values ?? "" : "",
+    sparklinePath instanceof SVGPathElement ? sparklinePath : null,
+  );
+
+  if (fetchStatus instanceof HTMLElement) {
+    fetchStatus.textContent = "Jalando el dato real del dolar...";
+  }
+
+  fetchLiveExchangeRate()
+    .then((liveRate) => {
+      const mood = getMoodContent(liveRate.trend);
+      paintDashboard({
+        currentRate: liveRate.currentRate,
+        previousRate: liveRate.previousRate,
+        updatedAtText: dateFormatter.format(new Date(liveRate.updatedAt)),
+        trend: liveRate.trend,
+        mood,
+        sourceLineText: `Fuente actual: ${liveRate.sourceLabel}. Trend comparado contra la ultima lectura guardada en este navegador.`,
+        sourceLabel: liveRate.sourceLabel,
+        sourceUrl: liveRate.sourceUrl,
+        sparklineValues: liveRate.sparkline.join(","),
+        fetchStatusText: "Dato en vivo cargado. Hoy la app viene mas afilada que chisme de oficina.",
+        heroCaption: `Mascota en vivo: ${trendLabelMap[liveRate.trend].toLowerCase()} con el dolar en ${currencyFormatter.format(liveRate.currentRate)}.`,
+        intensity: Math.abs(liveRate.currentRate - liveRate.previousRate) >= 2 ? "wild" : "mild",
+      });
+    })
+    .catch(() => {
+      if (fetchStatus instanceof HTMLElement) {
+        fetchStatus.textContent = "No cargaron los datos en vivo, asi que seguimos con el mock sin hacer papelon.";
+      }
+    });
+
+  demoButtons.forEach((button) => {
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    button.addEventListener("click", () => {
+      const trend = button.dataset.demoTrend;
+      const intensity = button.dataset.demoIntensity === "wild" ? "wild" : "mild";
+
+      if (trend !== "up" && trend !== "down" && trend !== "stable") {
+        return;
+      }
+
+      const currentRateMap = {
+        up: 527.8,
+        down: 454.2,
+        stable: 466.1,
+      };
+
+      const previousRateMap = {
+        up: 517.3,
+        down: 470.4,
+        stable: 466.0,
+      };
+
+      const mood = getMoodContent(trend);
+
+      paintDashboard({
+        currentRate: currentRateMap[trend],
+        previousRate: previousRateMap[trend],
+        updatedAtText: "Modo demo activado",
+        trend,
+        mood,
+        sourceLineText: "Fuente actual: demo local. Puro vacilon visual para probar estados extremos.",
+        sourceLabel: "Demo local",
+        sourceUrl: "https://www.exchangerate-api.com/docs/free",
+        sparklineValues:
+          trend === "up"
+            ? "505,509,511,514,516,520,523,527.8"
+            : trend === "down"
+              ? "481,479,475,471,468,462,458,454.2"
+              : "466,466.1,466,466.2,466.1,466,466.1,466.1",
+        fetchStatusText:
+          trend === "up"
+            ? "Modo crisis: el personaje entro en drama de cadena nacional."
+            : trend === "down"
+              ? "Modo bajon: ahora si se siente sabrosito el ambiente."
+              : "Modo calma sospechosa: demasiado silencio, demasiado orden.",
+        heroCaption: `Demo activado: ${trendLabelMap[trend].toLowerCase()} a puro meme.`,
+        intensity,
+      });
+    });
+  });
+
+  function updateSparkline(valuesText, path) {
+    if (!(path instanceof SVGPathElement)) {
+      return;
+    }
+
+    const values = valuesText
+      .split(",")
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value));
+
+    if (values.length < 2) {
+      return;
+    }
+
+    const width = 300;
+    const height = 80;
+    const padding = 8;
+    const minimum = Math.min(...values);
+    const maximum = Math.max(...values);
+    const range = Math.max(maximum - minimum, 1);
+
+    const points = values.map((value, index) => {
+      const x = padding + (index / (values.length - 1)) * (width - padding * 2);
+      const y = height - padding - ((value - minimum) / range) * (height - padding * 2);
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    });
+
+    path.setAttribute("d", points.join(" "));
+  }
+
+  function paintDashboard({
+    currentRate,
+    previousRate,
+    updatedAtText,
+    trend,
+    mood,
+    sourceLineText,
+    sourceLabel,
+    sourceUrl,
+    sparklineValues,
+    fetchStatusText,
+    heroCaption,
+    intensity,
+  }) {
+    toggleMoodTransition(true);
+
+    const difference = currentRate - previousRate;
+    const signedChange = difference > 0 ? `+${difference.toFixed(2)}` : difference.toFixed(2);
+
+    window.setTimeout(() => {
+      if (rateValue instanceof HTMLElement) {
+        rateValue.textContent = currencyFormatter.format(currentRate);
+        flashPop(rateValue);
+      }
+
+      if (fetchStatus instanceof HTMLElement) {
+        fetchStatus.textContent = fetchStatusText;
+      }
+
+      if (moodHeadline instanceof HTMLElement) {
+        moodHeadline.textContent = mood.headline;
+      }
+
+      if (moodBody instanceof HTMLElement) {
+        moodBody.textContent = mood.body;
+      }
+
+      if (trendLabel instanceof HTMLElement) {
+        trendLabel.textContent = trendLabelMap[trend];
+        trendLabel.dataset.trend = trend;
+      }
+
+      if (rateChange instanceof HTMLElement) {
+        rateChange.textContent = signedChange;
+      }
+
+      if (moodBadge instanceof HTMLElement) {
+        moodBadge.textContent = mood.badge;
+      }
+
+      if (updatedAt instanceof HTMLElement) {
+        updatedAt.textContent = updatedAtText;
+      }
+
+      if (sourceLine instanceof HTMLElement) {
+        sourceLine.textContent = sourceLineText;
+      }
+
+      if (sourceLink instanceof HTMLAnchorElement) {
+        sourceLink.href = sourceUrl;
+        sourceLink.textContent = sourceLabel;
+      }
+
+      if (sparkline instanceof SVGElement) {
+        sparkline.dataset.values = sparklineValues;
+      }
+
+      updateSparkline(sparklineValues, sparklinePath instanceof SVGPathElement ? sparklinePath : null);
+      toggleMoodTransition(false);
+
+      window.dispatchEvent(
+        new CustomEvent("dolar-mood:update", {
+          detail: {
+            trend,
+            mascotLabel: mood.mascotLabel,
+            heroCaption,
+            intensity,
+          },
+        }),
+      );
+    }, 120);
+  }
+
+  function toggleMoodTransition(isUpdating) {
+    moodNodes.forEach((node) => {
+      node.classList.toggle("is-updating", isUpdating);
+    });
+  }
+
+  function flashPop(node) {
+    node.classList.remove("rate-pop");
+    void node.offsetWidth;
+    node.classList.add("rate-pop");
+  }
+</script>
