@@ -124,7 +124,7 @@ const demoButtonBaseClass =
           <div>
             <p class="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Pulso del dolar</p>
             <p class="mt-2 text-sm text-slate-600">
-              Mini sparkline con lecturas guardadas en el navegador para que la vara tenga memoria.
+              Sparkline en vivo con color por tendencia y memoria local para que el movimiento si se note.
             </p>
           </div>
           <p class="rounded-full bg-white/75 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
@@ -133,20 +133,27 @@ const demoButtonBaseClass =
         </div>
 
         <svg
-          class="mt-3 h-20 w-full overflow-visible md:h-24"
+          class="sparkline-shell mt-3 h-20 w-full overflow-visible md:h-24"
           viewBox="0 0 300 80"
           preserveAspectRatio="none"
           aria-label="Mini grafico del tipo de cambio"
           data-sparkline
+          data-trend={trend}
           data-values={initialSparkline.join(",")}
         >
           <path
             d=""
+            class="sparkline-area"
+            opacity="1"
+            data-sparkline-area
+          ></path>
+          <path
+            d=""
+            class="sparkline-line"
             fill="none"
-            stroke="#ff7d62"
             stroke-linecap="round"
             stroke-linejoin="round"
-            stroke-width="4"
+            stroke-width="5"
             data-sparkline-path
           ></path>
         </svg>
@@ -192,6 +199,9 @@ const demoButtonBaseClass =
             Simular calma sospechosa 👀
           </button>
         </div>
+        <p class="mt-5 text-xs leading-5 text-slate-500">
+          Este dashboard es 100% frontend y guarda solo la ultima lectura en tu navegador.
+        </p>
       </article>
     </section>
   </main>
@@ -230,6 +240,7 @@ const demoButtonBaseClass =
   const sourceLink = document.querySelector("[data-source-link]");
   const sparkline = document.querySelector("[data-sparkline]");
   const sparklinePath = document.querySelector("[data-sparkline-path]");
+  const sparklineArea = document.querySelector("[data-sparkline-area]");
   const moodNodes = [moodHeadline, moodBody, moodBadge].filter((node) => node instanceof HTMLElement);
   const demoButtons = document.querySelectorAll("[data-demo-trend]");
 
@@ -348,6 +359,16 @@ const demoButtonBaseClass =
     });
 
     path.setAttribute("d", points.join(" "));
+    const lineLength = Math.ceil(path.getTotalLength());
+    path.style.setProperty("--sparkline-length", `${lineLength}`);
+    restartSparklineAnimation(path);
+
+    if (sparklineArea instanceof SVGPathElement) {
+      const firstX = padding;
+      const lastX = width - padding;
+      const areaPath = `${points.join(" ")} L ${lastX.toFixed(2)} ${(height - padding).toFixed(2)} L ${firstX.toFixed(2)} ${(height - padding).toFixed(2)} Z`;
+      sparklineArea.setAttribute("d", areaPath);
+    }
   }
 
   function paintDashboard({
@@ -415,6 +436,7 @@ const demoButtonBaseClass =
 
       if (sparkline instanceof SVGElement) {
         sparkline.dataset.values = sparklineValues;
+        sparkline.dataset.trend = trend;
       }
 
       updateSparkline(sparklineValues, sparklinePath instanceof SVGPathElement ? sparklinePath : null);
@@ -443,5 +465,11 @@ const demoButtonBaseClass =
     node.classList.remove("rate-pop");
     void node.offsetWidth;
     node.classList.add("rate-pop");
+  }
+
+  function restartSparklineAnimation(path) {
+    path.classList.remove("sparkline-line");
+    void path.getBoundingClientRect();
+    path.classList.add("sparkline-line");
   }
 </script>

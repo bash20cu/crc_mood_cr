@@ -83,15 +83,18 @@ export function createHeroScene({ canvas, trend, intensity = "mild" }: HeroScene
     const centerX = width * 0.5;
     const centerY = height * 0.56;
     const intensityBoost = intensity === "wild" ? 1.85 : 1;
+    const idleSway = Math.sin(animationFrame * 0.03) * 6;
     const shakeX =
       trend === "up"
         ? Math.sin(animationFrame * 0.58) * 5 * intensityBoost
-        : 0;
+        : idleSway * 0.4;
     const shakeY =
       trend === "up"
         ? Math.cos(animationFrame * 0.52) * 4 * intensityBoost
-        : 0;
-    const bounce = Math.sin(animationFrame * 0.05) * 10 * (trend === "down" ? 1.2 : 1);
+        : Math.cos(animationFrame * 0.03) * 1.8;
+    const bounce =
+      Math.sin(animationFrame * 0.05) * 10 * (trend === "down" ? 1.2 : 1) +
+      Math.sin(animationFrame * 0.025) * 4;
     const squish = 1 + Math.sin(animationFrame * 0.05) * 0.02 * intensityBoost;
 
     const gradient = context.createLinearGradient(0, 0, width, height);
@@ -105,6 +108,7 @@ export function createHeroScene({ canvas, trend, intensity = "mild" }: HeroScene
 
     context.save();
     context.translate(centerX + shakeX, centerY + bounce + shakeY);
+    context.rotate(idleSway * 0.005);
     context.scale(1, squish);
 
     drawMascotBody(context, theme);
@@ -196,6 +200,7 @@ function drawArmsAndLegs(
   intensity: "mild" | "wild",
 ) {
   const limbSwing = Math.sin(frame * 0.08) * (intensity === "wild" ? 18 : 10);
+  const idleReach = Math.sin(frame * 0.04) * 10;
 
   context.save();
   context.strokeStyle = "#1f2937";
@@ -204,12 +209,12 @@ function drawArmsAndLegs(
 
   context.beginPath();
   context.moveTo(-66, 14);
-  context.quadraticCurveTo(-112, trend === "up" ? -16 : 24, -118, trend === "up" ? -66 : 32);
+  context.quadraticCurveTo(-112, trend === "up" ? -16 : 24, -118 - idleReach * 0.4, trend === "up" ? -66 : 32);
   context.stroke();
 
   context.beginPath();
   context.moveTo(66, 14);
-  context.quadraticCurveTo(112, trend === "down" ? 36 : 4, 118, trend === "down" ? 18 : -42);
+  context.quadraticCurveTo(112, trend === "down" ? 36 : 4, 118 + idleReach * 0.4, trend === "down" ? 18 : -42);
   context.stroke();
 
   context.beginPath();
@@ -238,9 +243,10 @@ function drawFace(
   frame: number,
   intensity: "mild" | "wild",
 ) {
-  const blink = Math.abs(Math.sin(frame * 0.03)) < 0.05 ? 0.15 : 1;
+  const blink = Math.abs(Math.sin(frame * 0.055)) < 0.09 ? 0.1 : 1;
   const eyeTilt = trend === "up" ? -0.16 : trend === "down" ? 0.12 : 0;
   const tremble = trend === "up" && intensity === "wild" ? Math.sin(frame * 0.8) * 4 : 0;
+  const pupilLift = trend === "down" ? Math.sin(frame * 0.04) * 1.5 : 0;
 
   context.save();
   context.fillStyle = "#1f2937";
@@ -255,8 +261,8 @@ function drawFace(
 
   context.fillStyle = "#ffffff";
   context.beginPath();
-  context.ellipse(-27 - tremble, -12, 3, 3, 0, 0, Math.PI * 2);
-  context.ellipse(33 + tremble, -12, 3, 3, 0, 0, Math.PI * 2);
+  context.ellipse(-27 - tremble, -12 - pupilLift, 3, 3, 0, 0, Math.PI * 2);
+  context.ellipse(33 + tremble, -12 - pupilLift, 3, 3, 0, 0, Math.PI * 2);
   context.fill();
 
   context.strokeStyle = "#1f2937";
@@ -305,10 +311,11 @@ function drawExtras(
       context.stroke();
     }
 
-    const sweatDrops = intensity === "wild" ? 3 : 1;
+    const sweatDrops = intensity === "wild" ? 4 : 2;
     for (let index = 0; index < sweatDrops; index += 1) {
+      const dripOffset = Math.sin(frame * 0.08 + index) * 10;
       context.beginPath();
-      context.ellipse(48 + index * 18, 8 + index * 10, 8, 14, -0.2, 0, Math.PI * 2);
+      context.ellipse(42 + index * 18, 12 + index * 12 + dripOffset, 7, 14, -0.2, 0, Math.PI * 2);
       context.fill();
     }
 
@@ -375,6 +382,12 @@ function drawExtras(
     context.moveTo(54, -34);
     context.lineTo(76, -40 + Math.sin(frame * 0.07) * 6);
     context.stroke();
+
+    context.fillStyle = "rgba(91, 110, 225, 0.16)";
+    context.beginPath();
+    context.arc(-88, -6 + Math.sin(frame * 0.04) * 3, 11, 0, Math.PI * 2);
+    context.arc(-108, 8 + Math.cos(frame * 0.05) * 3, 8, 0, Math.PI * 2);
+    context.fill();
   }
 
   context.restore();
@@ -398,12 +411,13 @@ function drawParticles(
     const y = particle.y + Math.sin(frame * 0.02 + index) * 18 + ((index * 23) % 60);
     const opacity = trend === "up" ? 0.72 : trend === "down" ? 0.58 : 0.4;
     const speedBoost = intensity === "wild" ? 1.5 : 1;
+    const sizeBoost = trend === "down" ? 1.15 : trend === "stable" ? 0.9 : 1;
 
     context.save();
     context.translate(x, y % height);
     context.rotate(particle.rotation + frame * 0.01 * particle.drift * speedBoost);
     context.fillStyle = `rgba(31, 41, 55, ${opacity})`;
-    context.font = `${particle.size}px sans-serif`;
+    context.font = `${particle.size * sizeBoost}px sans-serif`;
     context.fillText(particle.symbol, 0, 0);
     context.restore();
   });
